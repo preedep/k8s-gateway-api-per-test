@@ -48,34 +48,34 @@ TARGET=""
 
 if [[ "${MODE}" == "nginx" ]]; then
   SVC_IP="$(kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')"
-  TARGET="http://${SVC_IP}/echo"
+  TARGET="http://${SVC_IP}/rust-echo"
 elif [[ "${MODE}" == "envoy" ]]; then
   ENVOY_SVC="$(envoy_dataplane_svc "${APP_NS}" "eg")"
   if [[ -z "${ENVOY_SVC}" ]]; then
-    err "Could not detect Envoy dataplane service. Ensure you ran: bash perf-routing/30-envoy-gateway.sh"
+    err "Could not detect Envoy dataplane service. Ensure you ran: bash perf-routing/33-envoy-gateway-rust.sh"
     exit 1
   fi
   SVC_IP="$(kubectl -n envoy-gateway-system get svc "${ENVOY_SVC}" -o jsonpath='{.spec.clusterIP}')"
-  TARGET="http://${SVC_IP}/echo"
+  TARGET="http://${SVC_IP}/rust-echo"
 elif [[ "${MODE}" == "istio" ]]; then
-  SVC_NAME="istio-gw-istio"
+  SVC_NAME="istio-gw-rust-istio"
   if ! kubectl -n "${APP_NS}" get svc "${SVC_NAME}" >/dev/null 2>&1; then
-    SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway.networking.k8s.io/gateway-name=istio-gw -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+    SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway.networking.k8s.io/gateway-name=istio-gw-rust -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
   fi
   if [[ -z "${SVC_NAME}" ]]; then
-    err "Could not detect Istio gateway service. Ensure you ran: bash perf-routing/40-istio-gatewayapi.sh"
+    err "Could not detect Istio gateway service. Ensure you ran: bash perf-routing/43-istio-gatewayapi-rust.sh"
     exit 1
   fi
   SVC_IP="$(kubectl -n "${APP_NS}" get svc "${SVC_NAME}" -o jsonpath='{.spec.clusterIP}')"
-  TARGET="http://${SVC_IP}/echo"
+  TARGET="http://${SVC_IP}/rust-echo"
 elif [[ "${MODE}" == "kong" ]]; then
-  SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway.networking.k8s.io/gateway-name=kong -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+  SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway.networking.k8s.io/gateway-name=kong-rust -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
   if [[ -z "${SVC_NAME}" ]]; then
-    err "Could not detect Kong gateway service. Ensure you ran: bash perf-routing/35-kong-gateway-operator.sh"
+    err "Could not detect Kong gateway service. Ensure you ran: bash perf-routing/37-kong-gateway-operator-rust.sh"
     exit 1
   fi
   SVC_IP="$(kubectl -n "${APP_NS}" get svc "${SVC_NAME}" -o jsonpath='{.spec.clusterIP}')"
-  TARGET="http://${SVC_IP}/echo"
+  TARGET="http://${SVC_IP}/rust-echo"
 else
   err "Unknown mode: ${MODE}. Expected nginx|envoy|istio|kong"
   exit 1
