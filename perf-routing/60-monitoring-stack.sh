@@ -302,7 +302,7 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
           "id": 1,
           "targets": [
-            {"expr": "sum(rate(kong_http_status[1m]))", "legendFormat": "req/s"}
+            {"expr": "sum(rate(kong_http_requests_total[1m]))", "legendFormat": "req/s"}
           ],
           "title": "Kong - TPS (req/s)",
           "type": "timeseries"
@@ -312,8 +312,8 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
           "id": 2,
           "targets": [
-            {"expr": "histogram_quantile(0.95, sum(rate(kong_request_latency_ms_bucket[5m])) by (le)) / 1000", "legendFormat": "p95"},
-            {"expr": "histogram_quantile(0.99, sum(rate(kong_request_latency_ms_bucket[5m])) by (le)) / 1000", "legendFormat": "p99"}
+            {"expr": "histogram_quantile(0.95, sum(rate(kong_request_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
+            {"expr": "histogram_quantile(0.99, sum(rate(kong_request_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
           ],
           "title": "Kong - Latency (p95/p99)",
           "type": "timeseries"
