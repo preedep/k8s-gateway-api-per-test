@@ -89,13 +89,46 @@ data:
         },
         {
           "datasource": "Prometheus",
-          "fieldConfig": {"defaults": {}, "overrides": []},
+          "fieldConfig": {"defaults": {"unit": "bytes", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
           "id": 4,
           "targets": [
-            {"expr": "sum(container_memory_working_set_bytes{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"})", "legendFormat": "bytes"}
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"})", "legendFormat": "memory"}
           ],
-          "title": "NGINX - Memory (bytes)",
+          "title": "NGINX - Memory (MB)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []},
+          "gridPos": {"h": 8, "w": 6, "x": 0, "y": 16},
+          "id": 5,
+          "targets": [
+            {"expr": "sum(increase(nginx_ingress_controller_requests[1m]))", "legendFormat": "total requests"}
+          ],
+          "title": "NGINX - Request Count (1m)",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "percentunit", "max": 1, "min": 0}, "overrides": []},
+          "gridPos": {"h": 8, "w": 6, "x": 6, "y": 16},
+          "id": 6,
+          "targets": [
+            {"expr": "sum(rate(nginx_ingress_controller_requests{status=~\"5..\"}[1m])) / sum(rate(nginx_ingress_controller_requests[1m]))", "legendFormat": "5xx error rate"}
+          ],
+          "title": "NGINX - Error Rate (5xx)",
+          "type": "stat"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+          "id": 7,
+          "targets": [
+            {"expr": "sum(nginx_ingress_controller_connections{state=\"active\"})", "legendFormat": "active connections"}
+          ],
+          "title": "NGINX - Active Connections",
           "type": "timeseries"
         }
       ],
