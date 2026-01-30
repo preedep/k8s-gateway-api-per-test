@@ -36,33 +36,64 @@ kubectl get nodes
 ติดตั้ง Gateway API CRDs + deploy แอปทดสอบ:
 ```bash
 bash perf-routing/00-prereqs.sh
+```
+
+**เลือกแอปทดสอบ:**
+
+แอปเดิม (http-echo):
+```bash
 bash perf-routing/10-app.sh
+```
+
+**หรือแอปใหม่ Rust microservice:**
+```bash
+bash perf-routing/15-rust-app.sh
 ```
 
 จากนั้นเลือกติดตั้ง/ทดสอบ 1 ตัว (เลือกอย่างใดอย่างหนึ่ง):
 
 NGINX Ingress:
 ```bash
+# สำหรับแอปเดิม
 bash perf-routing/20-nginx.sh
 bash perf-routing/50-loadtest-fortio.sh nginx
+
+# สำหรับ Rust microservice
+bash perf-routing/25-nginx-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh nginx
 ```
 
 Envoy Gateway:
 ```bash
+# สำหรับแอปเดิม
 bash perf-routing/30-envoy-gateway.sh
 bash perf-routing/50-loadtest-fortio.sh envoy
+
+# สำหรับ Rust microservice
+bash perf-routing/33-envoy-gateway-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh envoy
 ```
 
 Istio (Gateway API mode):
 ```bash
+# สำหรับแอปเดิม
 bash perf-routing/40-istio-gatewayapi.sh
 bash perf-routing/50-loadtest-fortio.sh istio
+
+# สำหรับ Rust microservice
+bash perf-routing/43-istio-gatewayapi-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh istio
 ```
 
 Kong Gateway Operator (Gateway API):
 ```bash
+# สำหรับแอปเดิม
 bash perf-routing/35-kong-gateway-operator.sh
 bash perf-routing/50-loadtest-fortio.sh kong
+
+# สำหรับ Rust microservice
+bash perf-routing/37-kong-gateway-operator-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh kong
 ```
 
 
@@ -114,33 +145,64 @@ kubectl get nodes
 Install Gateway API CRDs + deploy the test app:
 ```bash
 bash perf-routing/00-prereqs.sh
+```
+
+**Choose test app:**
+
+Original app (http-echo):
+```bash
 bash perf-routing/10-app.sh
+```
+
+**Or new Rust microservice:**
+```bash
+bash perf-routing/15-rust-app.sh
 ```
 
 Pick ONE controller to install/test:
 
 NGINX Ingress:
 ```bash
+# For original app
 bash perf-routing/20-nginx.sh
 bash perf-routing/50-loadtest-fortio.sh nginx
+
+# For Rust microservice
+bash perf-routing/25-nginx-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh nginx
 ```
 
 Envoy Gateway:
 ```bash
+# For original app
 bash perf-routing/30-envoy-gateway.sh
 bash perf-routing/50-loadtest-fortio.sh envoy
+
+# For Rust microservice
+bash perf-routing/33-envoy-gateway-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh envoy
 ```
 
 Istio (Gateway API mode):
 ```bash
+# For original app
 bash perf-routing/40-istio-gatewayapi.sh
 bash perf-routing/50-loadtest-fortio.sh istio
+
+# For Rust microservice
+bash perf-routing/43-istio-gatewayapi-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh istio
 ```
 
 Kong Gateway Operator (Gateway API):
 ```bash
+# For original app
 bash perf-routing/35-kong-gateway-operator.sh
 bash perf-routing/50-loadtest-fortio.sh kong
+
+# For Rust microservice
+bash perf-routing/37-kong-gateway-operator-rust.sh
+bash perf-routing/55-loadtest-fortio-rust.sh kong
 ```
 
 ### Cleanup
