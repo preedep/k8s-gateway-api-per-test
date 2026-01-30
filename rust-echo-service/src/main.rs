@@ -38,9 +38,11 @@ async fn main() {
         .and(warp::header::headers_cloned())
         .map(|req: EchoRequest, headers: warp::http::HeaderMap| {
             let mut header_map = HashMap::new();
-            for (name, value) in headers {
-                if let Ok(value_str) = value.to_str() {
-                    header_map.insert(name.to_string(), value_str.to_string());
+            for (name_opt, value) in headers {
+                if let Some(name) = name_opt {
+                    if let Ok(value_str) = value.to_str() {
+                        header_map.insert(name.to_string(), value_str.to_string());
+                    }
                 }
             }
 
