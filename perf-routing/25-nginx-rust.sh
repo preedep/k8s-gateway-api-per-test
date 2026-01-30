@@ -18,7 +18,7 @@ kubectl -n "${ING_NS}" patch deployment ingress-nginx-controller --type='json' -
 
 kubectl -n "${ING_NS}" rollout status deploy/ingress-nginx-controller --timeout=5m
 
-info "Creating Ingress route /echo -> svc/rust-echo" 
+info "Creating Ingress route /rust-echo -> svc/rust-echo" 
 ensure_ns "${APP_NS}"
 
 kubectl -n "${APP_NS}" apply -f - <<'YAML'
@@ -28,12 +28,13 @@ metadata:
   name: rust-echo-ing
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /echo
 spec:
   ingressClassName: nginx
   rules:
   - http:
       paths:
-      - path: /echo
+      - path: /rust-echo
         pathType: Prefix
         backend:
           service:

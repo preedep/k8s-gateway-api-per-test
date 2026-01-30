@@ -35,14 +35,14 @@ sleep 3
 
 # Check if port-forwards are working
 if curl -s http://localhost:3000/api/health > /dev/null 2>&1; then
-    success "Grafana is accessible at http://localhost:3000"
-    success "Login: admin / admin"
+    info "Grafana is accessible at http://localhost:3000"
+    info "Login: admin / admin"
 else
     warn "Grafana may not be ready yet, check http://localhost:3000"
 fi
 
 if curl -s http://localhost:9090/-/healthy > /dev/null 2>&1; then
-    success "Prometheus is accessible at http://localhost:9090"
+    info "Prometheus is accessible at http://localhost:9090"
 else
     warn "Prometheus may not be ready yet, check http://localhost:9090"
 fi
