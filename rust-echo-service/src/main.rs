@@ -17,6 +17,8 @@ struct EchoResponse {
 
 #[tokio::main]
 async fn main() {
+    println!("Rust Echo Service starting...");
+    
     // GET /echo - simple hello world
     let echo_get = warp::path("echo")
         .and(warp::get())
@@ -67,8 +69,8 @@ async fn main() {
         });
 
     let routes = echo_get.or(echo_post).or(health);
-
-    println!("Rust Echo Service starting on 0.0.0.0:8080");
+    
+    println!("Starting server on 0.0.0.0:8080");
     
     warp::serve(routes)
         .run(([0, 0, 0, 0], 8080))
