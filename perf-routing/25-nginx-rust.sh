@@ -16,7 +16,21 @@ kubectl -n "${ING_NS}" patch deployment ingress-nginx-controller --type='json' -
   {"op": "remove", "path": "/spec/template/spec/containers/0/args/9"}
 ]'
 
+# Wait for rollout to complete
 kubectl -n "${ING_NS}" rollout status deploy/ingress-nginx-controller --timeout=5m
+
+# Verify metrics are enabled
+info "Verifying NGINX metrics are enabled..."
+for i in {1..10}; do
+  if kubectl -n "${ING_NS}" exec $(kubectl -n "${ING_NS}" get pods -l app.kubernetes.io/component=controller -o jsonpath='{.items[0].metadata.name}') -- curl -s http://localhost:10254/metrics | grep -q "nginx_ingress_controller_requests"; then
+    info "NGINX request metrics are enabled"
+    break
+  fi
+  if [[ $i -eq 10 ]]; then
+    warn "NGINX request metrics may not be fully enabled, but continuing..."
+  fi
+  sleep 3
+done
 
 info "Creating Ingress route /rust-echo -> svc/rust-echo" 
 ensure_ns "${APP_NS}"
