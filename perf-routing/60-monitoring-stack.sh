@@ -59,7 +59,7 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
           "id": 1,
           "targets": [
-            {"expr": "sum(rate(nginx_ingress_controller_requests[1m]))", "legendFormat": "req/s"}
+            {"expr": "sum(rate(nginx_ingress_controller_nginx_process_requests_total[1m]))", "legendFormat": "req/s"}
           ],
           "title": "NGINX - TPS (req/s)",
           "type": "timeseries"
@@ -70,10 +70,9 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
           "id": 2,
           "targets": [
-            {"expr": "histogram_quantile(0.95, sum(rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
-            {"expr": "histogram_quantile(0.99, sum(rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
+            {"expr": "sum(nginx_ingress_controller_connections{state=\"active\"})", "legendFormat": "active connections"}
           ],
-          "title": "NGINX - Latency (p95/p99)",
+          "title": "NGINX - Active Connections",
           "type": "timeseries"
         },
         {
@@ -104,7 +103,7 @@ data:
           "gridPos": {"h": 8, "w": 6, "x": 0, "y": 16},
           "id": 5,
           "targets": [
-            {"expr": "sum(increase(nginx_ingress_controller_requests[1m]))", "legendFormat": "total requests"}
+            {"expr": "sum(rate(nginx_ingress_controller_nginx_process_requests_total[1m]))", "legendFormat": "total requests"}
           ],
           "title": "NGINX - Request Count (1m)",
           "type": "stat"
