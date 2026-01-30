@@ -15,11 +15,10 @@ helm repo update >/dev/null
 helm upgrade --install kps prometheus-community/kube-prometheus-stack \
   -n "${MON_NS}" \
   --wait \
-  --set prometheus-node-exporter.enabled=false \
+  --rollback-on-failure \
+  --timeout 10m \
+  --set nodeExporter.enabled=false \
   -f - <<'YAML'
-prometheus-node-exporter:
-  enabled: false
-
 prometheus:
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
