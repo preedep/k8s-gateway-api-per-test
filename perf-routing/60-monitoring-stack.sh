@@ -1,0 +1,322 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "${SCRIPT_DIR}/lib.sh"
+
+need_cmd kubectl
+need_cmd helm
+
+ensure_ns "${MON_NS}"
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
+helm repo update >/dev/null
+
+helm upgrade --install kps prometheus-community/kube-prometheus-stack \
+  -n "${MON_NS}" \
+  --wait \
+  -f - <<'YAML'
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorNamespaceSelector: {}
+
+grafana:
+  adminUser: admin
+  adminPassword: admin
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL
+YAML
+
+kubectl -n "${MON_NS}" apply -f - <<'YAML'
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-nginx
+  labels:
+    grafana_dashboard: "1"
+data:
+  nginx.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "targets": [
+            {"expr": "sum(rate(nginx_ingress_controller_requests[1m]))", "legendFormat": "req/s"}
+          ],
+          "title": "NGINX - TPS (req/s)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "targets": [
+            {"expr": "histogram_quantile(0.95, sum(rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
+            {"expr": "histogram_quantile(0.99, sum(rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
+          ],
+          "title": "NGINX - Latency (p95/p99)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "targets": [
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+          ],
+          "title": "NGINX - CPU (cores)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "targets": [
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"})", "legendFormat": "bytes"}
+          ],
+          "title": "NGINX - Memory (bytes)",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["gateway", "nginx"],
+      "templating": {"list": []},
+      "time": {"from": "now-15m", "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Gateway - NGINX",
+      "uid": "gw-nginx",
+      "version": 1
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-envoy
+  labels:
+    grafana_dashboard: "1"
+data:
+  envoy.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "targets": [
+            {"expr": "sum(rate(envoy_http_downstream_rq_total[1m]))", "legendFormat": "req/s"}
+          ],
+          "title": "Envoy - TPS (req/s)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "targets": [
+            {"expr": "histogram_quantile(0.95, sum(rate(envoy_http_downstream_rq_time_bucket[5m])) by (le))", "legendFormat": "p95"},
+            {"expr": "histogram_quantile(0.99, sum(rate(envoy_http_downstream_rq_time_bucket[5m])) by (le))", "legendFormat": "p99"}
+          ],
+          "title": "Envoy - Latency (p95/p99)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "targets": [
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"envoy-gateway-system\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+          ],
+          "title": "Envoy - CPU (cores)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "targets": [
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"envoy-gateway-system\",container!=\"POD\"})", "legendFormat": "bytes"}
+          ],
+          "title": "Envoy - Memory (bytes)",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["gateway", "envoy"],
+      "templating": {"list": []},
+      "time": {"from": "now-15m", "to": "now"},
+      "timezone": "browser",
+      "title": "Gateway - Envoy",
+      "uid": "gw-envoy",
+      "version": 1
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-istio
+  labels:
+    grafana_dashboard: "1"
+data:
+  istio.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "targets": [
+            {"expr": "sum(rate(istio_requests_total[1m]))", "legendFormat": "req/s"}
+          ],
+          "title": "Istio - TPS (req/s)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "targets": [
+            {"expr": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le)) / 1000", "legendFormat": "p95"},
+            {"expr": "histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le)) / 1000", "legendFormat": "p99"}
+          ],
+          "title": "Istio - Latency (p95/p99)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "targets": [
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"perf-app\",pod=~\"istio-gw.*\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+          ],
+          "title": "Istio Gateway - CPU (cores)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "targets": [
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"perf-app\",pod=~\"istio-gw.*\",container!=\"POD\"})", "legendFormat": "bytes"}
+          ],
+          "title": "Istio Gateway - Memory (bytes)",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["gateway", "istio"],
+      "templating": {"list": []},
+      "time": {"from": "now-15m", "to": "now"},
+      "timezone": "browser",
+      "title": "Gateway - Istio",
+      "uid": "gw-istio",
+      "version": 1
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kong
+  labels:
+    grafana_dashboard: "1"
+data:
+  kong.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "targets": [
+            {"expr": "sum(rate(kong_http_status[1m]))", "legendFormat": "req/s"}
+          ],
+          "title": "Kong - TPS (req/s)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "targets": [
+            {"expr": "histogram_quantile(0.95, sum(rate(kong_request_latency_ms_bucket[5m])) by (le)) / 1000", "legendFormat": "p95"},
+            {"expr": "histogram_quantile(0.99, sum(rate(kong_request_latency_ms_bucket[5m])) by (le)) / 1000", "legendFormat": "p99"}
+          ],
+          "title": "Kong - Latency (p95/p99)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "targets": [
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"perf-app\",pod=~\"kong.*\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+          ],
+          "title": "Kong Gateway - CPU (cores)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "targets": [
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"perf-app\",pod=~\"kong.*\",container!=\"POD\"})", "legendFormat": "bytes"}
+          ],
+          "title": "Kong Gateway - Memory (bytes)",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["gateway", "kong"],
+      "templating": {"list": []},
+      "time": {"from": "now-15m", "to": "now"},
+      "timezone": "browser",
+      "title": "Gateway - Kong",
+      "uid": "gw-kong",
+      "version": 1
+    }
+YAML
+
+info "Installed kube-prometheus-stack in namespace ${MON_NS}"
+info "Grafana: kubectl -n ${MON_NS} port-forward svc/kps-grafana 3000:80"
+info "Prometheus: kubectl -n ${MON_NS} port-forward svc/kps-kube-prometheus-stack-prometheus 9090:9090"
