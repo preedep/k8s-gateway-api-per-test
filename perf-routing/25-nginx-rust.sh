@@ -60,7 +60,7 @@ else
   # Temporarily disable webhook
   kubectl -n "${ING_NS}" patch validatingwebhookconfiguration ingress-nginx-admission --type='json' -p='[
     {"op": "replace", "path": "/webhooks/0/rules/0/operations", "value": []}
-  ]' --ignore-not-found
+  ]' 2>/dev/null || true
   
   # Create Ingress again
   kubectl -n "${APP_NS}" apply -f - <<'YAML'
@@ -88,7 +88,7 @@ YAML
   # Re-enable webhook
   kubectl -n "${ING_NS}" patch validatingwebhookconfiguration ingress-nginx-admission --type='json' -p='[
     {"op": "replace", "path": "/webhooks/0/rules/0/operations", "value": ["CREATE", "UPDATE"]}
-  ]' --ignore-not-found
+  ]' 2>/dev/null || true
   
   info "Ingress created successfully (webhook temporarily disabled)"
 fi
