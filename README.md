@@ -205,6 +205,36 @@ bash perf-routing/37-kong-gateway-operator-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh kong
 ```
 
+### Monitoring (Grafana + Prometheus)
+
+Install monitoring stack:
+```bash
+bash perf-routing/60-monitoring-stack.sh
+```
+
+Configure metrics scraping for gateways:
+```bash
+bash perf-routing/61-monitoring-scrape-gateways.sh
+```
+
+Start monitoring UI (auto port-forward):
+```bash
+bash perf-routing/70-monitoring-port-forward.sh
+```
+
+Access URLs:
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+
+Manual port-forward (alternative):
+```bash
+# Grafana
+kubectl -n perf-monitoring port-forward svc/kps-grafana 3000:80
+
+# Prometheus  
+kubectl -n perf-monitoring port-forward svc/kps-kube-prometheus-stack-prometheus 9090:9090
+```
+
 ### Cleanup
 Remove everything created by these scripts:
 ```bash
@@ -214,3 +244,4 @@ bash perf-routing/90-cleanup.sh
 Notes:
 - The Istio script requires `istioctl` to be installed locally (the script will print install hints if missing).
 - Tuning (duration/concurrency/QPS) is in `perf-routing/50-loadtest-fortio.sh`.
+- Use `70-monitoring-port-forward.sh` for easy access to Grafana/Prometheus without manual port-forwarding.
