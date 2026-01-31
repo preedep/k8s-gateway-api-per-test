@@ -6,16 +6,60 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 need_cmd kubectl
 
-if ! command -v istioctl >/dev/null 2>&1; then
-  err "istioctl is required but not found."
-  err "Install options:"
-  err "- https://istio.io/latest/docs/setup/getting-started/#download"
-  err "Then re-run: bash perf-routing/43-istio-gatewayapi-rust.sh"
-  exit 1
+ISTIO_VERSION="${ISTIO_VERSION:-1.22.3}"
+ISTIOCTL_BIN=""
+
+if command -v istioctl >/dev/null 2>&1; then
+  ISTIOCTL_BIN="istioctl"
+else
+  need_cmd curl
+  need_cmd tar
+
+  OS_RAW="$(uname -s)"
+  ARCH_RAW="$(uname -m)"
+
+  OS=""
+  ARCH=""
+  case "${OS_RAW}" in
+    Linux) OS="linux" ;;
+    Darwin) OS="osx" ;;
+    *)
+      err "Unsupported OS for istioctl auto-install: ${OS_RAW}"
+      exit 1
+      ;;
+  esac
+
+  case "${ARCH_RAW}" in
+    x86_64|amd64) ARCH="amd64" ;;
+    arm64|aarch64) ARCH="arm64" ;;
+    *)
+      err "Unsupported architecture for istioctl auto-install: ${ARCH_RAW}"
+      exit 1
+      ;;
+  esac
+
+  TOOLS_DIR="${SCRIPT_DIR}/../.tools/istioctl/${ISTIO_VERSION}"
+  mkdir -p "${TOOLS_DIR}"
+
+  ISTIOCTL_PATH="${TOOLS_DIR}/istioctl"
+  if [[ ! -x "${ISTIOCTL_PATH}" ]]; then
+    TMP_DIR="$(mktemp -d)"
+    ARCHIVE="${TMP_DIR}/istioctl.tar.gz"
+    URL="https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istioctl-${ISTIO_VERSION}-${OS}-${ARCH}.tar.gz"
+
+    info "istioctl not found; downloading ${URL}"
+    curl -fsSL "${URL}" -o "${ARCHIVE}"
+    tar -xzf "${ARCHIVE}" -C "${TMP_DIR}"
+    mv "${TMP_DIR}/istioctl" "${ISTIOCTL_PATH}"
+    chmod +x "${ISTIOCTL_PATH}"
+    rm -rf "${TMP_DIR}"
+  fi
+
+  ISTIOCTL_BIN="${ISTIOCTL_PATH}"
 fi
 
 info "Installing Istio (minimal profile) with Gateway API enabled..."
-istioctl install -y \
+"${ISTIOCTL_BIN}" install -y \
   --set profile=minimal \
   --set values.pilot.env.PILOT_ENABLED_SERVICE_APIS=true
 

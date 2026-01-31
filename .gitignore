@@ -29,3 +29,4 @@ target
 /target
 /istio-1.28.3
 /benchmark-latency-results.csv
+/.tools/istioctl/1.22.3/istioctl
