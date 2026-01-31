@@ -38,6 +38,13 @@ spec:
       - name: fortio
         image: fortio/fortio:latest
         args: ["server"]
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
         ports:
         - containerPort: 8080
 YAML
