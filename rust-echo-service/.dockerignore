@@ -4,4 +4,3 @@ Dockerfile
 .git/
 .gitignore
 README.md
-Cargo.lock

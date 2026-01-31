@@ -79,6 +79,8 @@ spec:
     targetPort: 8080
 YAML
 
+kubectl -n "${APP_NS}" rollout restart deploy/rust-echo
+
 wait_deploy "${APP_NS}" rust-echo
 kubectl -n "${APP_NS}" get pods,svc
 

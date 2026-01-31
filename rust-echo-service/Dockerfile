@@ -4,18 +4,12 @@ FROM rust:latest AS builder
 WORKDIR /app
 
 # Copy Cargo files
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 
 # Create a dummy main.rs to build dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-
-# Build dependencies
-RUN cargo build --release && rm -rf src
-
-# Copy the actual source code
 COPY src ./src
 
-# Build the application
+# Build dependencies
 RUN cargo build --release
 
 # Runtime stage
