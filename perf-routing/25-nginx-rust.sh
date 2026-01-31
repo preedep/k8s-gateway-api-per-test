@@ -16,6 +16,26 @@ kubectl -n "${ING_NS}" patch deployment ingress-nginx-controller --type='json' -
   {"op": "remove", "path": "/spec/template/spec/containers/0/args/9"}
 ]'
 
+kubectl -n "${ING_NS}" patch deployment ingress-nginx-controller --type='merge' -p '{
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "name": "controller",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}'
+
 # Wait for rollout to complete
 kubectl -n "${ING_NS}" rollout status deploy/ingress-nginx-controller --timeout=5m
 

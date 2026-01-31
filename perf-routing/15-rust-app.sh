@@ -31,7 +31,7 @@ kind: Deployment
 metadata:
   name: rust-echo
 spec:
-  replicas: 2
+  replicas: 10
   selector:
     matchLabels:
       app: rust-echo
@@ -51,8 +51,8 @@ spec:
             cpu: "50m"
             memory: "64Mi"
           limits:
-            cpu: "200m"
-            memory: "128Mi"
+            cpu: "500m"
+            memory: "500Mi"
         livenessProbe:
           httpGet:
             path: /health
