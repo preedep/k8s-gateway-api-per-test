@@ -31,7 +31,7 @@ kind: Deployment
 metadata:
   name: rust-echo
 spec:
-  replicas: 2
+  replicas: 10
   selector:
     matchLabels:
       app: rust-echo

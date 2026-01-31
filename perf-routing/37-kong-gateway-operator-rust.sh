@@ -29,7 +29,7 @@ kubectl -n "${KONG_OPERATOR_NS}" wait --for=condition=Available=True --timeout=5
 
 ensure_ns "${APP_NS}"
 
-info "Creating GatewayConfiguration (DataPlane image) with resource limits to match nginx baseline"
+info "Creating GatewayConfiguration (DataPlane image) with resource limits and high-performance tuning"
 kubectl -n "${APP_NS}" apply -f - <<'YAML'
 apiVersion: gateway-operator.konghq.com/v1beta1
 kind: GatewayConfiguration
@@ -44,6 +44,21 @@ spec:
           containers:
           - name: proxy
             image: kong:3.9.1
+            env:
+            - name: KONG_NGINX_WORKER_PROCESSES
+              value: "auto"
+            - name: KONG_NGINX_EVENTS_WORKER_CONNECTIONS
+              value: "10000"
+            - name: KONG_UPSTREAM_KEEPALIVE_POOL_SIZE
+              value: "512"
+            - name: KONG_UPSTREAM_KEEPALIVE_MAX_REQUESTS
+              value: "10000"
+            - name: KONG_UPSTREAM_KEEPALIVE_IDLE_TIMEOUT
+              value: "60"
+            - name: KONG_NGINX_HTTP_KEEPALIVE_REQUESTS
+              value: "10000"
+            - name: KONG_NGINX_HTTP_KEEPALIVE_TIMEOUT
+              value: "75s"
             resources:
               limits:
                 cpu: "1"

@@ -27,7 +27,7 @@ YAML
 
 ensure_ns "${APP_NS}"
 
-info "Creating EnvoyProxy custom resource for resource limits to match nginx baseline..."
+info "Creating EnvoyProxy custom resource for resource limits and high-performance tuning..."
 kubectl -n "${APP_NS}" apply -f - <<YAML
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
@@ -44,6 +44,31 @@ spec:
             limits:
               cpu: "1"
               memory: "1Gi"
+  bootstrap:
+    type: Merge
+    value: |
+      static_resources:
+        clusters:
+        - name: dynamic_forward_proxy_cluster
+          connect_timeout: 5s
+          lb_policy: CLUSTER_PROVIDED
+          circuit_breakers:
+            thresholds:
+            - priority: DEFAULT
+              max_connections: 10000
+              max_pending_requests: 10000
+              max_requests: 10000
+              max_retries: 3
+          upstream_connection_options:
+            tcp_keepalive:
+              keepalive_time: 300
+      overload_manager:
+        refresh_interval: 0.25s
+        resource_monitors:
+        - name: "envoy.resource_monitors.fixed_heap"
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.resource_monitors.fixed_heap.v3.FixedHeapConfig
+            max_heap_size_bytes: 1073741824
 YAML
 
 info "Creating Gateway+HTTPRoute in namespace ${APP_NS} for Rust service"

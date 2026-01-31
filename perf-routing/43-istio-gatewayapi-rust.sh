@@ -75,6 +75,42 @@ YAML
 
 wait_gateway_programmed "${APP_NS}" "${GW_NAME}"
 
+info "Applying EnvoyFilter for high-performance tuning..."
+kubectl -n "${APP_NS}" apply -f - <<YAML
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: ${GW_NAME}-performance-tuning
+spec:
+  workloadSelector:
+    labels:
+      istio.io/gateway-name: ${GW_NAME}
+  configPatches:
+  - applyTo: CLUSTER
+    match:
+      context: GATEWAY
+    patch:
+      operation: MERGE
+      value:
+        circuit_breakers:
+          thresholds:
+          - priority: DEFAULT
+            max_connections: 10000
+            max_pending_requests: 10000
+            max_requests: 10000
+            max_retries: 3
+        upstream_connection_options:
+          tcp_keepalive:
+            keepalive_time: 300
+  - applyTo: LISTENER
+    match:
+      context: GATEWAY
+    patch:
+      operation: MERGE
+      value:
+        per_connection_buffer_limit_bytes: 32768
+YAML
+
 info "Patching Istio gateway deployment with resource limits to match nginx baseline..."
 # Wait for deployment to be created
 for i in {1..30}; do
