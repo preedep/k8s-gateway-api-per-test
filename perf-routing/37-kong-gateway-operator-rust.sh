@@ -5,15 +5,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${SCRIPT_DIR}/lib.sh"
 
 need_cmd kubectl
+need_cmd helm
 
 KONG_OPERATOR_NS="kong-system"
 GW_NAME="kong-rust"
 
-info "Installing Kong Gateway Operator (Gateway API controller)..."
+info "Installing Kong Gateway Operator (Gateway API controller) via Helm..."
 ensure_ns "${KONG_OPERATOR_NS}"
 
-# Official release manifest (kubectl apply). If this URL changes, use the Kong/kong-operator releases page.
-kubectl apply -f https://github.com/Kong/kong-operator/releases/latest/download/kong-operator.yaml
+# Add Kong Helm repository
+helm repo add kong https://charts.konghq.com >/dev/null 2>&1 || true
+helm repo update >/dev/null 2>&1
+
+# Install Kong Gateway Operator using Helm (skip Gateway API CRDs as they're already installed)
+helm upgrade --install kong-operator kong/gateway-operator \
+  -n "${KONG_OPERATOR_NS}" \
+  --create-namespace \
+  --skip-crds \
+  --wait \
+  --timeout 5m
 
 kubectl -n "${KONG_OPERATOR_NS}" wait --for=condition=Available=True --timeout=5m deployment --all
 
@@ -21,7 +31,7 @@ ensure_ns "${APP_NS}"
 
 info "Creating GatewayConfiguration (DataPlane image) with resource limits to match nginx baseline"
 kubectl -n "${APP_NS}" apply -f - <<'YAML'
-apiVersion: gateway-operator.konghq.com/v2beta1
+apiVersion: gateway-operator.konghq.com/v1beta1
 kind: GatewayConfiguration
 metadata:
   name: kong-rust
