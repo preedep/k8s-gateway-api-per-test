@@ -9,23 +9,64 @@ need_cmd helm
 
 KONG_OPERATOR_NS="kong-system"
 GW_NAME="kong-rust"
+HELM_TIMEOUT="${HELM_TIMEOUT:-15m}"
+HELM_RETRIES="${HELM_RETRIES:-3}"
+KONG_OPERATOR_CPU_REQUEST="${KONG_OPERATOR_CPU_REQUEST:-5m}"
+KONG_OPERATOR_MEM_REQUEST="${KONG_OPERATOR_MEM_REQUEST:-64Mi}"
+KONG_OPERATOR_CPU_LIMIT="${KONG_OPERATOR_CPU_LIMIT:-500m}"
+KONG_OPERATOR_MEM_LIMIT="${KONG_OPERATOR_MEM_LIMIT:-256Mi}"
+
+print_kong_operator_debug() {
+  warn "Helm install/upgrade failed. Collecting diagnostics..."
+  kubectl -n "${KONG_OPERATOR_NS}" get pods -o wide || true
+  kubectl -n "${KONG_OPERATOR_NS}" get events --sort-by=.lastTimestamp | tail -n 50 || true
+  kubectl -n "${KONG_OPERATOR_NS}" describe pods || true
+  helm -n "${KONG_OPERATOR_NS}" status kong-operator || true
+}
 
 info "Installing Kong Gateway Operator (Gateway API controller) via Helm..."
 ensure_ns "${KONG_OPERATOR_NS}"
 
 # Add Kong Helm repository
 helm repo add kong https://charts.konghq.com >/dev/null 2>&1 || true
-helm repo update >/dev/null 2>&1
+info "Updating Helm repos (this may take a while if network is slow)..."
+helm repo update
 
 # Install Kong Gateway Operator using Helm (skip Gateway API CRDs as they're already installed)
-helm upgrade --install kong-operator kong/gateway-operator \
-  -n "${KONG_OPERATOR_NS}" \
-  --create-namespace \
-  --skip-crds \
-  --wait \
-  --timeout 5m
+set +e
+for i in $(seq 1 "${HELM_RETRIES}"); do
+  info "Helm install/upgrade attempt ${i}/${HELM_RETRIES} (timeout=${HELM_TIMEOUT})..."
+  helm upgrade --install kong-operator kong/gateway-operator \
+    -n "${KONG_OPERATOR_NS}" \
+    --create-namespace \
+    --skip-crds \
+    --set "kic-crds.enabled=false" \
+    --set "gwapi-standard-crds.enabled=false" \
+    --set "gwapi-experimental-crds.enabled=false" \
+    --set "resources.requests.cpu=${KONG_OPERATOR_CPU_REQUEST}" \
+    --set "resources.requests.memory=${KONG_OPERATOR_MEM_REQUEST}" \
+    --set "resources.limits.cpu=${KONG_OPERATOR_CPU_LIMIT}" \
+    --set "resources.limits.memory=${KONG_OPERATOR_MEM_LIMIT}" \
+    --wait \
+    --timeout "${HELM_TIMEOUT}"
+  rc=$?
+  if [[ $rc -eq 0 ]]; then
+    break
+  fi
+  warn "Helm attempt ${i}/${HELM_RETRIES} failed (exit=${rc}). Retrying..."
+  sleep 10
+done
+set -e
 
-kubectl -n "${KONG_OPERATOR_NS}" wait --for=condition=Available=True --timeout=5m deployment --all
+if ! helm -n "${KONG_OPERATOR_NS}" status kong-operator >/dev/null 2>&1; then
+  print_kong_operator_debug
+  exit 1
+fi
+
+kubectl -n "${KONG_OPERATOR_NS}" wait --for=condition=Available=True --timeout="${HELM_TIMEOUT}" deployment --all || {
+  print_kong_operator_debug
+  exit 1
+}
 
 ensure_ns "${APP_NS}"
 
