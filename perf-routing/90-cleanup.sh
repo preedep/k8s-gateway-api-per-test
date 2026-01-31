@@ -8,9 +8,10 @@ need_cmd kubectl
 
 MODE="${1:-all}"
 
-info "Cleaning up test namespaces (${APP_NS}, ${TEST_NS})"
+info "Cleaning up test namespaces (${APP_NS}, ${TEST_NS}, ${MON_NS})"
 kubectl delete ns "${TEST_NS}" --ignore-not-found
 kubectl delete ns "${APP_NS}" --ignore-not-found
+kubectl delete ns "${MON_NS}" --ignore-not-found
 
 if [[ "${MODE}" == "all" ]]; then
   info "Cleaning up controllers (ingress-nginx, envoy-gateway-system, istio-system, kong-system)"

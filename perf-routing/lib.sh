@@ -3,6 +3,7 @@ set -euo pipefail
 
 APP_NS="perf-app"
 TEST_NS="perf-test"
+MON_NS="perf-monitoring"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
