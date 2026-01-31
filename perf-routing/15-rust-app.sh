@@ -18,7 +18,7 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 # Build the Docker image
-docker build -t rust-echo-service:latest .
+docker build --no-cache -t rust-echo-service:latest .
 
 # Load the image into Docker Desktop Kubernetes
 docker save rust-echo-service:latest | docker load
