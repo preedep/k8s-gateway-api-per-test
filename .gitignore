@@ -27,3 +27,4 @@ target
 # Added by cargo
 
 /target
+/istio-1.28.3
