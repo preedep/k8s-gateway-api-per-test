@@ -6,10 +6,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 need_cmd kubectl
 
+# Colors for logging
+COLOR_RESET='\033[0m'
+COLOR_BLUE='\033[1;34m'
+COLOR_GREEN='\033[1;32m'
+COLOR_YELLOW='\033[1;33m'
+COLOR_CYAN='\033[1;36m'
+COLOR_MAGENTA='\033[1;35m'
+
 # Output CSV file
 OUTPUT_CSV="benchmark-latency-results.csv"
 TEMP_DIR="/tmp/fortio-benchmark-$$"
 mkdir -p "${TEMP_DIR}"
+
+# Wait time between tests (seconds)
+WAIT_TIME=30
 
 # Test configurations from the images
 declare -a TEST_CONFIGS=(
@@ -87,48 +98,67 @@ parse_fortio_output() {
 }
 
 # Run benchmarks
+TOTAL_TESTS=$((${#GATEWAYS[@]} * ${#TEST_CONFIGS[@]}))
+CURRENT_TEST=0
+
 for gateway in "${GATEWAYS[@]}"; do
-  info ""
-  info "=== Testing ${gateway} Gateway ==="
+  echo -e "\n${COLOR_BLUE}╔════════════════════════════════════════════════════════════════╗${COLOR_RESET}"
+  echo -e "${COLOR_BLUE}║${COLOR_RESET}  ${COLOR_CYAN}Testing ${gateway^^} Gateway${COLOR_RESET}                                    ${COLOR_BLUE}║${COLOR_RESET}"
+  echo -e "${COLOR_BLUE}╚════════════════════════════════════════════════════════════════╝${COLOR_RESET}\n"
   
   for config in "${TEST_CONFIGS[@]}"; do
     IFS=':' read -r concurrent tps <<< "${config}"
+    CURRENT_TEST=$((CURRENT_TEST + 1))
     
-    info "Running: concurrent=${concurrent}, tps=${tps}"
+    echo -e "${COLOR_MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_RESET}"
+    echo -e "${COLOR_YELLOW}[Test ${CURRENT_TEST}/${TOTAL_TESTS}]${COLOR_RESET} ${COLOR_CYAN}Gateway: ${gateway}${COLOR_RESET} | ${COLOR_GREEN}Concurrent: ${concurrent}${COLOR_RESET} | ${COLOR_GREEN}TPS: ${tps}${COLOR_RESET}"
+    echo -e "${COLOR_MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_RESET}"
+    
+    # Wait before starting test to let system stabilize
+    echo -e "${COLOR_YELLOW}⏳ Waiting ${WAIT_TIME} seconds for system to stabilize...${COLOR_RESET}"
+    for i in $(seq ${WAIT_TIME} -1 1); do
+      printf "\r${COLOR_YELLOW}   Countdown: %2d seconds remaining...${COLOR_RESET}" $i
+      sleep 1
+    done
+    echo -e "\n${COLOR_GREEN}✓ System stabilized${COLOR_RESET}\n"
     
     # Output file for this test
     OUTPUT_FILE="${TEMP_DIR}/${gateway}-${concurrent}-${tps}.txt"
     
+    echo -e "${COLOR_CYAN}🚀 Starting Fortio load test (60s duration)...${COLOR_RESET}"
+    
     # Run Fortio load test via the existing script
-    bash "${SCRIPT_DIR}/55-loadtest-fortio-rust.sh" "${gateway}" "60s" "${concurrent}" "${tps}" > "${OUTPUT_FILE}" 2>&1 || {
-      warn "Test failed for ${gateway} ${concurrent}/${tps}"
+    if bash "${SCRIPT_DIR}/55-loadtest-fortio-rust.sh" "${gateway}" "60s" "${concurrent}" "${tps}" > "${OUTPUT_FILE}" 2>&1; then
+      echo -e "${COLOR_GREEN}✓ Load test completed${COLOR_RESET}\n"
+      
+      # Parse the output
+      echo -e "${COLOR_CYAN}📊 Parsing results...${COLOR_RESET}"
+      parse_fortio_output "${OUTPUT_FILE}" "${gateway}" "${concurrent}" "${tps}"
+      echo -e "${COLOR_GREEN}✓ Results saved to CSV${COLOR_RESET}\n"
+    else
+      echo -e "${COLOR_YELLOW}⚠ Test failed for ${gateway} ${concurrent}/${tps}${COLOR_RESET}"
       # Write N/A values
       echo "${gateway},${concurrent},${tps},60s,N/A" >> "${OUTPUT_CSV}"
-      continue
-    }
-    
-    # Parse the output
-    parse_fortio_output "${OUTPUT_FILE}" "${gateway}" "${concurrent}" "${tps}"
-    
-    # Wait between tests to let system stabilize
-    sleep 10
+    fi
   done
   
-  info "Completed ${gateway} gateway"
+  echo -e "\n${COLOR_GREEN}✓✓✓ Completed ${gateway} gateway ✓✓✓${COLOR_RESET}\n"
 done
 
 # Cleanup temp files
 rm -rf "${TEMP_DIR}"
 
-info ""
-info "=== Benchmark Completed ==="
-info "Results saved to: ${OUTPUT_CSV}"
-info ""
-info "To view results in table format:"
-info "  column -t -s, ${OUTPUT_CSV} | less -S"
-info ""
-info "To copy to clipboard (macOS):"
-info "  cat ${OUTPUT_CSV} | pbcopy"
-info ""
-info "To import to Excel/Google Sheets:"
-info "  Open the CSV file directly"
+echo -e "\n${COLOR_BLUE}╔════════════════════════════════════════════════════════════════╗${COLOR_RESET}"
+echo -e "${COLOR_BLUE}║${COLOR_RESET}  ${COLOR_GREEN}✓✓✓ BENCHMARK COMPLETED SUCCESSFULLY ✓✓✓${COLOR_RESET}                ${COLOR_BLUE}║${COLOR_RESET}"
+echo -e "${COLOR_BLUE}╚════════════════════════════════════════════════════════════════╝${COLOR_RESET}\n"
+
+echo -e "${COLOR_CYAN}📊 Results saved to:${COLOR_RESET} ${COLOR_GREEN}${OUTPUT_CSV}${COLOR_RESET}\n"
+
+echo -e "${COLOR_YELLOW}📋 To view results:${COLOR_RESET}"
+echo -e "   ${COLOR_CYAN}▸${COLOR_RESET} Table format:  ${COLOR_GREEN}column -t -s, ${OUTPUT_CSV} | less -S${COLOR_RESET}"
+echo -e "   ${COLOR_CYAN}▸${COLOR_RESET} Copy to clipboard: ${COLOR_GREEN}cat ${OUTPUT_CSV} | pbcopy${COLOR_RESET}"
+echo -e "   ${COLOR_CYAN}▸${COLOR_RESET} Open in Excel/Sheets: ${COLOR_GREEN}${OUTPUT_CSV}${COLOR_RESET}\n"
+
+echo -e "${COLOR_MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_RESET}"
+echo -e "${COLOR_GREEN}Total tests completed: ${TOTAL_TESTS}${COLOR_RESET}"
+echo -e "${COLOR_MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_RESET}\n"
