@@ -137,12 +137,16 @@ YAML
   done
 fi
 
-# Kong Gateway metrics (best-effort; requires Kong to expose /metrics)
-# If Kong Status API is enabled, /metrics is commonly served on :8100/metrics.
+# Kong Gateway metrics (Kong Gateway Operator creates DataPlane pods with dynamic labels)
 if kubectl get ns "${APP_NS}" >/dev/null 2>&1; then
   for GW in kong kong-rust; do
-    if kubectl -n "${APP_NS}" get pods -l "gateway.networking.k8s.io/gateway-name=${GW}" >/dev/null 2>&1; then
-      kubectl -n "${APP_NS}" apply -f - <<YAML
+    # Check if Gateway exists
+    if kubectl -n "${APP_NS}" get gateway "${GW}" >/dev/null 2>&1; then
+      # Find DataPlane pods for this gateway (they have label like app: kong-rust-xxxxx)
+      KONG_APP_LABEL=$(kubectl -n "${APP_NS}" get pods -l "gateway-operator.konghq.com/selector" -o jsonpath='{.items[0].metadata.labels.app}' 2>/dev/null | grep "${GW}" || true)
+      
+      if [[ -n "${KONG_APP_LABEL}" ]]; then
+        kubectl -n "${APP_NS}" apply -f - <<YAML
 apiVersion: v1
 kind: Service
 metadata:
@@ -152,14 +156,14 @@ metadata:
     gateway-name: ${GW}
 spec:
   selector:
-    gateway.networking.k8s.io/gateway-name: ${GW}
+    app: ${KONG_APP_LABEL}
   ports:
   - name: metrics
     port: 8100
     targetPort: 8100
 YAML
 
-      kubectl -n "${MON_NS}" apply -f - <<YAML
+        kubectl -n "${MON_NS}" apply -f - <<YAML
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -170,12 +174,14 @@ spec:
     - ${APP_NS}
   selector:
     matchLabels:
+      app: kong-metrics
       gateway-name: ${GW}
   endpoints:
   - port: metrics
     path: /metrics
     interval: 15s
 YAML
+      fi
     fi
   done
 fi
