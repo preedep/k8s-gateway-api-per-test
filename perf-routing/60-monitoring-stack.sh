@@ -15,7 +15,7 @@ helm repo update >/dev/null
 helm upgrade --install kps prometheus-community/kube-prometheus-stack \
   -n "${MON_NS}" \
   --wait \
-  --rollback-on-failure \
+  --atomic \
   --timeout 10m \
   --set nodeExporter.enabled=false \
   -f - <<'YAML'
