@@ -57,7 +57,7 @@ if [[ "${MODE}" == "nginx" ]]; then
   SVC_IP="$(kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')"
   TARGET="http://${SVC_IP}/rust-echo"
 elif [[ "${MODE}" == "envoy" ]]; then
-  ENVOY_SVC="$(envoy_dataplane_svc "${APP_NS}" "eg")"
+  ENVOY_SVC="$(envoy_dataplane_svc "${APP_NS}" "eg-rust")"
   if [[ -z "${ENVOY_SVC}" ]]; then
     err "Could not detect Envoy dataplane service. Ensure you ran: bash perf-routing/33-envoy-gateway-rust.sh"
     exit 1

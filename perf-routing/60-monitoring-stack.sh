@@ -88,11 +88,11 @@ data:
         },
         {
           "datasource": "Prometheus",
-          "fieldConfig": {"defaults": {"unit": "bytes", "min": 0}, "overrides": []},
+          "fieldConfig": {"defaults": {"unit": "decmbytes", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
           "id": 4,
           "targets": [
-            {"expr": "sum(container_memory_working_set_bytes{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"})", "legendFormat": "memory"}
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"}) / 1024 / 1024", "legendFormat": "memory"}
           ],
           "title": "NGINX - Memory (MB)",
           "type": "timeseries"
@@ -192,12 +192,13 @@ data:
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "decmbytes", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
           "id": 4,
           "targets": [
-            {"expr": "sum(container_memory_working_set_bytes{namespace=\"envoy-gateway-system\",container!=\"POD\"})", "legendFormat": "bytes"}
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"envoy-gateway-system\",container!=\"POD\"}) / 1024 / 1024", "legendFormat": "memory"}
           ],
-          "title": "Envoy - Memory (bytes)",
+          "title": "Envoy - Memory (MB)",
           "type": "timeseries"
         }
       ],
@@ -261,12 +262,13 @@ data:
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "decmbytes", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
           "id": 4,
           "targets": [
-            {"expr": "sum(container_memory_working_set_bytes{namespace=\"perf-app\",pod=~\"istio-gw.*\",container!=\"POD\"})", "legendFormat": "bytes"}
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"perf-app\",pod=~\"istio-gw.*\",container!=\"POD\"}) / 1024 / 1024", "legendFormat": "memory"}
           ],
-          "title": "Istio Gateway - Memory (bytes)",
+          "title": "Istio Gateway - Memory (MB)",
           "type": "timeseries"
         }
       ],
@@ -330,12 +332,13 @@ data:
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "decmbytes", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
           "id": 4,
           "targets": [
-            {"expr": "sum(container_memory_working_set_bytes{namespace=\"perf-app\",pod=~\"kong.*\",container!=\"POD\"})", "legendFormat": "bytes"}
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"perf-app\",pod=~\"kong.*\",container!=\"POD\"}) / 1024 / 1024", "legendFormat": "memory"}
           ],
-          "title": "Kong Gateway - Memory (bytes)",
+          "title": "Kong Gateway - Memory (MB)",
           "type": "timeseries"
         }
       ],

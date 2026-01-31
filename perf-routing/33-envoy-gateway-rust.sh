@@ -27,34 +27,7 @@ YAML
 
 ensure_ns "${APP_NS}"
 
-info "Configuring Envoy Gateway dataplane resources to match nginx baseline..."
-kubectl -n "${APP_NS}" apply -f - <<YAML
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: envoy-gateway-config
-  namespace: ${EG_NS}
-data:
-  envoy-gateway.yaml: |
-    apiVersion: gateway.envoyproxy.io/v1alpha1
-    kind: EnvoyProxy
-    metadata:
-      name: custom-proxy-config
-      namespace: ${APP_NS}
-    spec:
-      provider:
-        type: Kubernetes
-        kubernetes:
-          envoyDeployment:
-            replicas: 1
-            container:
-              resources:
-                limits:
-                  cpu: "1"
-                  memory: "1Gi"
-YAML
-
-info "Creating EnvoyProxy custom resource for resource limits..."
+info "Creating EnvoyProxy custom resource for resource limits to match nginx baseline..."
 kubectl -n "${APP_NS}" apply -f - <<YAML
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
