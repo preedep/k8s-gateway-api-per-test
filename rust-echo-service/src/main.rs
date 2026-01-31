@@ -24,7 +24,7 @@ async fn main() {
         .and(warp::get())
         .map(|| {
             // Add 100ms delay to simulate processing time
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            //std::thread::sleep(std::time::Duration::from_millis(100));
             
             let response = EchoResponse {
                 message: "Hello from Rust Echo Service!".to_string(),
@@ -43,7 +43,7 @@ async fn main() {
         .and(warp::header::headers_cloned())
         .map(|req: EchoRequest, headers: warp::http::HeaderMap| {
             // Add 100ms delay to simulate processing time
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            //std::thread::sleep(std::time::Duration::from_millis(100));
             
             let mut header_map = HashMap::new();
             for (name_opt, value) in headers {
