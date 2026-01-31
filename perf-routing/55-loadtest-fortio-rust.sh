@@ -76,7 +76,12 @@ elif [[ "${MODE}" == "istio" ]]; then
   SVC_IP="$(kubectl -n "${APP_NS}" get svc "${SVC_NAME}" -o jsonpath='{.spec.clusterIP}')"
   TARGET="http://${SVC_IP}/rust-echo"
 elif [[ "${MODE}" == "kong" ]]; then
-  SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway.networking.k8s.io/gateway-name=kong-rust -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+  # Kong Gateway Operator creates service with pattern: dataplane-ingress-<gateway-name>-*
+  SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway-operator.konghq.com/dataplane-service-type=ingress -o jsonpath='{.items[?(@.metadata.name=~".*kong-rust.*")].metadata.name}' 2>/dev/null || true)"
+  if [[ -z "${SVC_NAME}" ]]; then
+    # Fallback: try to find by name pattern
+    SVC_NAME="$(kubectl -n "${APP_NS}" get svc --no-headers 2>/dev/null | grep 'dataplane-ingress-kong-rust' | awk '{print $1}' | head -1)"
+  fi
   if [[ -z "${SVC_NAME}" ]]; then
     err "Could not detect Kong gateway service. Ensure you ran: bash perf-routing/37-kong-gateway-operator-rust.sh"
     exit 1

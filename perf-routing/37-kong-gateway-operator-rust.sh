@@ -48,6 +48,10 @@ spec:
               limits:
                 cpu: "1"
                 memory: "1Gi"
+    network:
+      services:
+        ingress:
+          type: ClusterIP
 YAML
 
 info "Ensuring GatewayClass kong exists..."
