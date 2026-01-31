@@ -102,8 +102,9 @@ TOTAL_TESTS=$((${#GATEWAYS[@]} * ${#TEST_CONFIGS[@]}))
 CURRENT_TEST=0
 
 for gateway in "${GATEWAYS[@]}"; do
+  GATEWAY_UPPER=$(echo "${gateway}" | tr '[:lower:]' '[:upper:]')
   echo -e "\n${COLOR_BLUE}╔════════════════════════════════════════════════════════════════╗${COLOR_RESET}"
-  echo -e "${COLOR_BLUE}║${COLOR_RESET}  ${COLOR_CYAN}Testing ${gateway^^} Gateway${COLOR_RESET}                                    ${COLOR_BLUE}║${COLOR_RESET}"
+  echo -e "${COLOR_BLUE}║${COLOR_RESET}  ${COLOR_CYAN}Testing ${GATEWAY_UPPER} Gateway${COLOR_RESET}                                    ${COLOR_BLUE}║${COLOR_RESET}"
   echo -e "${COLOR_BLUE}╚════════════════════════════════════════════════════════════════╝${COLOR_RESET}\n"
   
   for config in "${TEST_CONFIGS[@]}"; do
