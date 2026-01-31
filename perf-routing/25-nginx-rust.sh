@@ -16,7 +16,7 @@ kubectl -n "${ING_NS}" patch deployment ingress-nginx-controller --type='json' -
   {"op": "remove", "path": "/spec/template/spec/containers/0/args/9"}
 ]'
 
-kubectl -n "${ING_NS}" patch deployment ingress-nginx-controller --type='merge' -p '{
+kubectl -n "${ING_NS}" patch deployment ingress-nginx-controller --type='strategic' -p '{
   "spec": {
     "template": {
       "spec": {
