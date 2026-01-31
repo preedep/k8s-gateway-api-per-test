@@ -77,13 +77,13 @@ data:
         },
         {
           "datasource": "Prometheus",
-          "fieldConfig": {"defaults": {}, "overrides": []},
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
           "id": 3,
           "targets": [
-            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"ingress-nginx\",pod=~\"ingress-nginx-controller.*\",container!=\"POD\"}[5m])) * 100", "legendFormat": "cpu usage"}
           ],
-          "title": "NGINX - CPU (cores)",
+          "title": "NGINX - CPU (%)",
           "type": "timeseries"
         },
         {
@@ -171,23 +171,25 @@ data:
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "ms", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
           "id": 2,
           "targets": [
             {"expr": "histogram_quantile(0.95, sum(rate(envoy_http_downstream_rq_time_bucket[5m])) by (le))", "legendFormat": "p95"},
             {"expr": "histogram_quantile(0.99, sum(rate(envoy_http_downstream_rq_time_bucket[5m])) by (le))", "legendFormat": "p99"}
           ],
-          "title": "Envoy - Latency (p95/p99)",
+          "title": "Envoy - Latency (p95/p99) ms",
           "type": "timeseries"
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
           "id": 3,
           "targets": [
-            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"envoy-gateway-system\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"envoy-gateway-system\",container!=\"POD\"}[5m])) * 100", "legendFormat": "cpu usage"}
           ],
-          "title": "Envoy - CPU (cores)",
+          "title": "Envoy - CPU (%)",
           "type": "timeseries"
         },
         {
@@ -241,23 +243,25 @@ data:
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
           "id": 2,
           "targets": [
             {"expr": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le)) / 1000", "legendFormat": "p95"},
             {"expr": "histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le)) / 1000", "legendFormat": "p99"}
           ],
-          "title": "Istio - Latency (p95/p99)",
+          "title": "Istio - Latency (p95/p99) sec",
           "type": "timeseries"
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
           "id": 3,
           "targets": [
-            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"perf-app\",pod=~\"istio-gw.*\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"perf-app\",pod=~\"istio-gw.*\",container!=\"POD\"}[5m])) * 100", "legendFormat": "cpu usage"}
           ],
-          "title": "Istio Gateway - CPU (cores)",
+          "title": "Istio Gateway - CPU (%)",
           "type": "timeseries"
         },
         {
@@ -311,23 +315,25 @@ data:
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
           "id": 2,
           "targets": [
             {"expr": "histogram_quantile(0.95, sum(rate(kong_request_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
             {"expr": "histogram_quantile(0.99, sum(rate(kong_request_latency_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
           ],
-          "title": "Kong - Latency (p95/p99)",
+          "title": "Kong - Latency (p95/p99) sec",
           "type": "timeseries"
         },
         {
           "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}, "overrides": []},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
           "id": 3,
           "targets": [
-            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"perf-app\",pod=~\"kong.*\",container!=\"POD\"}[5m]))", "legendFormat": "cpu cores"}
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"perf-app\",pod=~\"kong.*\",container!=\"POD\"}[5m])) * 100", "legendFormat": "cpu usage"}
           ],
-          "title": "Kong Gateway - CPU (cores)",
+          "title": "Kong Gateway - CPU (%)",
           "type": "timeseries"
         },
         {
