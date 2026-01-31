@@ -27,12 +27,60 @@ YAML
 
 ensure_ns "${APP_NS}"
 
+info "Configuring Envoy Gateway dataplane resources to match nginx baseline..."
+kubectl -n "${APP_NS}" apply -f - <<YAML
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-gateway-config
+  namespace: ${EG_NS}
+data:
+  envoy-gateway.yaml: |
+    apiVersion: gateway.envoyproxy.io/v1alpha1
+    kind: EnvoyProxy
+    metadata:
+      name: custom-proxy-config
+      namespace: ${APP_NS}
+    spec:
+      provider:
+        type: Kubernetes
+        kubernetes:
+          envoyDeployment:
+            replicas: 1
+            container:
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: "1Gi"
+YAML
+
+info "Creating EnvoyProxy custom resource for resource limits..."
+kubectl -n "${APP_NS}" apply -f - <<YAML
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: custom-proxy-config
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 1
+        container:
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+YAML
+
 info "Creating Gateway+HTTPRoute in namespace ${APP_NS} for Rust service"
 kubectl -n "${APP_NS}" apply -f - <<YAML
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: ${GW_NAME}
+  annotations:
+    gateway.envoyproxy.io/envoy-proxy: custom-proxy-config
 spec:
   gatewayClassName: envoy
   listeners:
@@ -51,7 +99,13 @@ spec:
   - matches:
     - path:
         type: PathPrefix
-        value: /echo
+        value: /rust-echo
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /echo
     backendRefs:
     - name: rust-echo
       port: 80

@@ -41,6 +41,8 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: ${GW_NAME}
+  annotations:
+    networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
   listeners:
@@ -59,13 +61,52 @@ spec:
   - matches:
     - path:
         type: PathPrefix
-        value: /echo
+        value: /rust-echo
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /echo
     backendRefs:
     - name: rust-echo
       port: 80
 YAML
 
 wait_gateway_programmed "${APP_NS}" "${GW_NAME}"
+
+info "Patching Istio gateway deployment with resource limits to match nginx baseline..."
+# Wait for deployment to be created
+for i in {1..30}; do
+  if kubectl -n "${APP_NS}" get deployment "${GW_NAME}-istio" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 2
+done
+
+# Patch deployment with resource limits and replicas
+kubectl -n "${APP_NS}" patch deployment "${GW_NAME}-istio" --type='strategic' -p '{
+  "spec": {
+    "replicas": 1,
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "name": "istio-proxy",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}' || warn "Could not patch Istio gateway deployment resources"
+
+kubectl -n "${APP_NS}" rollout status deployment "${GW_NAME}-istio" --timeout=2m || true
 
 info "Generated gateway Service/Deployment are typically named <Gateway>-<GatewayClass>"
 info "Expected Service: ${APP_NS}/${GW_NAME}-istio"

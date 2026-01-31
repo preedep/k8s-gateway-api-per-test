@@ -19,7 +19,7 @@ kubectl -n "${KONG_OPERATOR_NS}" wait --for=condition=Available=True --timeout=5
 
 ensure_ns "${APP_NS}"
 
-info "Creating GatewayConfiguration (DataPlane image)"
+info "Creating GatewayConfiguration (DataPlane image) with resource limits to match nginx baseline"
 kubectl -n "${APP_NS}" apply -f - <<'YAML'
 apiVersion: gateway-operator.konghq.com/v2beta1
 kind: GatewayConfiguration
@@ -34,6 +34,10 @@ spec:
           containers:
           - name: proxy
             image: kong:3.9.1
+            resources:
+              limits:
+                cpu: "1"
+                memory: "1Gi"
 YAML
 
 info "Ensuring GatewayClass kong exists..."
@@ -75,7 +79,13 @@ spec:
   - matches:
     - path:
         type: PathPrefix
-        value: /echo
+        value: /rust-echo
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /echo
     backendRefs:
     - name: rust-echo
       port: 80
