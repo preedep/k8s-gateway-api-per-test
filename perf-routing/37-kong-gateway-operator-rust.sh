@@ -107,6 +107,24 @@ YAML
 
 wait_gateway_programmed "${APP_NS}" "${GW_NAME}"
 
+info "Enabling Kong Prometheus plugin for metrics collection..."
+kubectl apply -f - <<'YAML'
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: prometheus
+  annotations:
+    kubernetes.io/ingress.class: kong
+  labels:
+    global: "true"
+plugin: prometheus
+config:
+  status_code_metrics: true
+  latency_metrics: true
+  bandwidth_metrics: true
+  upstream_health_metrics: true
+YAML
+
 info "Kong dataplane Service is created in the same namespace and labeled with gateway.networking.k8s.io/gateway-name"
 kubectl -n "${APP_NS}" get svc -l gateway.networking.k8s.io/gateway-name=${GW_NAME} -o wide || true
 kubectl -n "${APP_NS}" get gateway,httproute || true
