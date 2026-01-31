@@ -28,8 +28,8 @@ kubectl get nodes
 ```
 
 ### แนวคิดเพื่อให้เทียบผลได้แฟร์
-- ใช้แอปเดียวกัน (`echo` service) เป็น backend
-- ใช้ rule แบบเดียวกัน: path `/echo`
+- ใช้แอปเดียวกัน (`rust-echo` service) เป็น backend
+- ใช้ rule แบบเดียวกัน: path `/rust-echo`
 - ยิงโหลดจากในคลัสเตอร์ (Fortio pod) เพื่อลด noise จาก network ของ macOS
 
 ### วิธีใช้งาน (แนะนำให้รันตามลำดับ)
@@ -38,60 +38,36 @@ kubectl get nodes
 bash perf-routing/00-prereqs.sh
 ```
 
-**เลือกแอปทดสอบ:**
-
-แอปเดิม (http-echo):
-```bash
-bash perf-routing/10-app.sh
-```
-
-**หรือแอปใหม่ Rust microservice:**
+**แอปทดสอบ:**
 ```bash
 bash perf-routing/15-rust-app.sh
 ```
+
+หมายเหตุ:
+- สคริปต์แอปเดิม (http-echo) และชุด load test เดิม ถูกย้ายไปไว้ที่ `perf-routing/_echo/`
 
 จากนั้นเลือกติดตั้ง/ทดสอบ 1 ตัว (เลือกอย่างใดอย่างหนึ่ง):
 
 NGINX Ingress:
 ```bash
-# สำหรับแอปเดิม
-bash perf-routing/20-nginx.sh
-bash perf-routing/50-loadtest-fortio.sh nginx
-
-# สำหรับ Rust microservice
 bash perf-routing/25-nginx-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh nginx
 ```
 
 Envoy Gateway:
 ```bash
-# สำหรับแอปเดิม
-bash perf-routing/30-envoy-gateway.sh
-bash perf-routing/50-loadtest-fortio.sh envoy
-
-# สำหรับ Rust microservice
 bash perf-routing/33-envoy-gateway-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh envoy
 ```
 
 Istio (Gateway API mode):
 ```bash
-# สำหรับแอปเดิม
-bash perf-routing/40-istio-gatewayapi.sh
-bash perf-routing/50-loadtest-fortio.sh istio
-
-# สำหรับ Rust microservice
 bash perf-routing/43-istio-gatewayapi-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh istio
 ```
 
 Kong Gateway Operator (Gateway API):
 ```bash
-# สำหรับแอปเดิม
-bash perf-routing/35-kong-gateway-operator.sh
-bash perf-routing/50-loadtest-fortio.sh kong
-
-# สำหรับ Rust microservice
 bash perf-routing/37-kong-gateway-operator-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh kong
 ```
@@ -105,7 +81,7 @@ bash perf-routing/90-cleanup.sh
 
 หมายเหตุ:
 - สคริปต์ Istio ต้องมี `istioctl` ในเครื่องก่อน (สคริปต์จะแจ้งวิธีติดตั้งหากไม่มี)
-- ถ้าต้องการปรับจำนวน request/เวลา/concurrency ให้ดูตัวแปรใน `perf-routing/50-loadtest-fortio.sh`
+- ถ้าต้องการปรับจำนวน request/เวลา/concurrency ให้ดูตัวแปรใน `perf-routing/55-loadtest-fortio-rust.sh`
 
 ---
 
@@ -137,8 +113,8 @@ kubectl get nodes
 ```
 
 ### Fair comparison guidelines
-- Same backend app (`echo`)
-- Same routing rule: `/echo`
+- Same backend app (`rust-echo`)
+- Same routing rule: `/rust-echo`
 - Run load tests from inside the cluster (Fortio pod) to reduce host networking noise on macOS
 
 ### Usage (run in order)
@@ -147,60 +123,36 @@ Install Gateway API CRDs + deploy the test app:
 bash perf-routing/00-prereqs.sh
 ```
 
-**Choose test app:**
-
-Original app (http-echo):
-```bash
-bash perf-routing/10-app.sh
-```
-
-**Or new Rust microservice:**
+**Test app:**
 ```bash
 bash perf-routing/15-rust-app.sh
 ```
+
+Note:
+- Legacy http-echo scripts are moved to `perf-routing/_echo/` to avoid confusion
 
 Pick ONE controller to install/test:
 
 NGINX Ingress:
 ```bash
-# For original app
-bash perf-routing/20-nginx.sh
-bash perf-routing/50-loadtest-fortio.sh nginx
-
-# For Rust microservice
 bash perf-routing/25-nginx-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh nginx
 ```
 
 Envoy Gateway:
 ```bash
-# For original app
-bash perf-routing/30-envoy-gateway.sh
-bash perf-routing/50-loadtest-fortio.sh envoy
-
-# For Rust microservice
 bash perf-routing/33-envoy-gateway-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh envoy
 ```
 
 Istio (Gateway API mode):
 ```bash
-# For original app
-bash perf-routing/40-istio-gatewayapi.sh
-bash perf-routing/50-loadtest-fortio.sh istio
-
-# For Rust microservice
 bash perf-routing/43-istio-gatewayapi-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh istio
 ```
 
 Kong Gateway Operator (Gateway API):
 ```bash
-# For original app
-bash perf-routing/35-kong-gateway-operator.sh
-bash perf-routing/50-loadtest-fortio.sh kong
-
-# For Rust microservice
 bash perf-routing/37-kong-gateway-operator-rust.sh
 bash perf-routing/55-loadtest-fortio-rust.sh kong
 ```
@@ -259,6 +211,6 @@ bash perf-routing/90-cleanup.sh
 
 Notes:
 - The Istio script requires `istioctl` to be installed locally (the script will print install hints if missing).
-- Tuning (duration/concurrency/QPS) is in `perf-routing/50-loadtest-fortio.sh`.
+- Tuning (duration/concurrency/QPS) is in `perf-routing/55-loadtest-fortio-rust.sh`.
 - Use `70-monitoring-port-forward.sh` for easy access to Grafana/Prometheus without manual port-forwarding.
 - Monitoring setup includes TPS, Latency (p95/p99), CPU, and Memory metrics for all gateways.
