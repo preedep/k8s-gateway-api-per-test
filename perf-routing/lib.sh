@@ -5,7 +5,26 @@ APP_NS="perf-app"
 TEST_NS="perf-test"
 MON_NS="perf-monitoring"
 
+# Detect kubectl or microk8s kubectl
+if command -v kubectl >/dev/null 2>&1; then
+  KUBECTL_CMD="kubectl"
+elif command -v microk8s >/dev/null 2>&1; then
+  KUBECTL_CMD="microk8s kubectl"
+  # Create kubectl wrapper function
+  kubectl() {
+    microk8s kubectl "$@"
+  }
+  export -f kubectl
+else
+  echo "ERROR: neither kubectl nor microk8s command found" >&2
+  exit 1
+fi
+
 need_cmd() {
+  # Skip kubectl check since we handle it above
+  if [[ "$1" == "kubectl" ]]; then
+    return 0
+  fi
   command -v "$1" >/dev/null 2>&1 || {
     echo "ERROR: missing command: $1" >&2
     exit 1
