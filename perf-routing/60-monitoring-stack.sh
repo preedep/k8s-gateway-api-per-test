@@ -291,6 +291,103 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: grafana-dashboard-istio-ambient
+  labels:
+    grafana_dashboard: "1"
+data:
+  istio-ambient.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "targets": [
+            {"expr": "sum(rate(istio_requests_total{source_workload_namespace=\"perf-app\"}[1m]))", "legendFormat": "req/s"}
+          ],
+          "title": "Istio Ambient - TPS (req/s)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "s", "min": 0}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "targets": [
+            {"expr": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{source_workload_namespace=\"perf-app\"}[5m])) by (le)) / 1000", "legendFormat": "p95"},
+            {"expr": "histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket{source_workload_namespace=\"perf-app\"}[5m])) by (le)) / 1000", "legendFormat": "p99"}
+          ],
+          "title": "Istio Ambient - Latency (p95/p99) sec",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "targets": [
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"perf-app\",pod=~\"istio-ambient-gw.*\",container!=\"POD\"}[5m])) * 100", "legendFormat": "gateway cpu"},
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"istio-system\",pod=~\"ztunnel.*\",container!=\"POD\"}[5m])) * 100", "legendFormat": "ztunnel cpu"}
+          ],
+          "title": "Istio Ambient - CPU (%)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "decmbytes", "min": 0}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "targets": [
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"perf-app\",pod=~\"istio-ambient-gw.*\",container!=\"POD\"}) / 1024 / 1024", "legendFormat": "gateway memory"},
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"istio-system\",pod=~\"ztunnel.*\",container!=\"POD\"}) / 1024 / 1024", "legendFormat": "ztunnel memory"}
+          ],
+          "title": "Istio Ambient - Memory (MB)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "short", "min": 0}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+          "id": 5,
+          "targets": [
+            {"expr": "sum(istio_tcp_connections_opened_total{reporter=\"source\"})", "legendFormat": "connections opened"},
+            {"expr": "sum(istio_tcp_connections_closed_total{reporter=\"source\"})", "legendFormat": "connections closed"}
+          ],
+          "title": "Istio Ambient - TCP Connections",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {"defaults": {"unit": "percentunit", "max": 1, "min": 0}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+          "id": 6,
+          "targets": [
+            {"expr": "sum(rate(istio_requests_total{response_code=~\"5..\",source_workload_namespace=\"perf-app\"}[1m])) / sum(rate(istio_requests_total{source_workload_namespace=\"perf-app\"}[1m]))", "legendFormat": "5xx error rate"}
+          ],
+          "title": "Istio Ambient - Error Rate (5xx)",
+          "type": "stat"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["gateway", "istio", "ambient"],
+      "templating": {"list": []},
+      "time": {"from": "now-15m", "to": "now"},
+      "timezone": "browser",
+      "title": "Gateway - Istio Ambient",
+      "uid": "gw-istio-ambient",
+      "version": 1
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: grafana-dashboard-kong
   labels:
     grafana_dashboard: "1"
