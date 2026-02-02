@@ -28,6 +28,16 @@ elif command -v microk8s >/dev/null 2>&1; then
       rm -f "${KUBECONFIG_TEMP}"
     fi
   fi
+  
+  # Create helm wrapper function if helm is not available but microk8s helm3 is
+  if ! command -v helm >/dev/null 2>&1; then
+    if microk8s status --wait-ready >/dev/null 2>&1 && microk8s helm3 version >/dev/null 2>&1; then
+      helm() {
+        microk8s helm3 "$@"
+      }
+      export -f helm
+    fi
+  fi
 else
   echo "ERROR: neither kubectl nor microk8s command found" >&2
   exit 1
