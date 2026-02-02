@@ -15,6 +15,19 @@ elif command -v microk8s >/dev/null 2>&1; then
     microk8s kubectl "$@"
   }
   export -f kubectl
+  
+  # Export kubeconfig for tools like istioctl
+  if [[ -z "${KUBECONFIG:-}" ]]; then
+    KUBECONFIG_TEMP="$(mktemp)"
+    microk8s config > "${KUBECONFIG_TEMP}" 2>/dev/null || true
+    if [[ -s "${KUBECONFIG_TEMP}" ]]; then
+      export KUBECONFIG="${KUBECONFIG_TEMP}"
+      # Clean up on exit
+      trap "rm -f '${KUBECONFIG_TEMP}'" EXIT
+    else
+      rm -f "${KUBECONFIG_TEMP}"
+    fi
+  fi
 else
   echo "ERROR: neither kubectl nor microk8s command found" >&2
   exit 1
