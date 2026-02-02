@@ -32,3 +32,5 @@ target
 /.tools/istioctl/1.22.3/istioctl
 /benchmark-latency-results.csv.1
 /benchmark-latency-results.csv.2
+/benchmark-latency-results.csv.3
+/benchmark-latency-results.csv.4
