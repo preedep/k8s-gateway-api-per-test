@@ -14,14 +14,22 @@ cd "${SCRIPT_DIR}/../rust-echo-service"
 
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
-    error "Docker is not running. Please start Docker Desktop."
+    err "Docker is not running. Please start Docker or install it."
+    exit 1
 fi
 
 # Build the Docker image
+info "Building Docker image..."
 docker build --no-cache -t rust-echo-service:latest .
 
-# Load the image into Docker Desktop Kubernetes
-docker save rust-echo-service:latest | docker load
+# Load the image into Kubernetes
+if command -v microk8s >/dev/null 2>&1; then
+    info "Detected microk8s - importing image..."
+    docker save rust-echo-service:latest | microk8s ctr image import -
+else
+    info "Loading image into Docker Desktop Kubernetes..."
+    docker save rust-echo-service:latest | docker load
+fi
 
 cd "${SCRIPT_DIR}"
 
