@@ -8,7 +8,7 @@ need_cmd kubectl
 
 MODE="${1:-}"
 if [[ -z "${MODE}" ]]; then
-  err "Usage: bash perf-routing/55-loadtest-fortio-rust.sh <nginx|envoy|istio|kong> [duration] [concurrency] [qps]"
+  err "Usage: bash perf-routing/55-loadtest-fortio-rust.sh <nginx|envoy|istio|istio-ambient|kong> [duration] [concurrency] [qps]"
   exit 1
 fi
 
@@ -75,6 +75,17 @@ elif [[ "${MODE}" == "istio" ]]; then
   fi
   SVC_IP="$(kubectl -n "${APP_NS}" get svc "${SVC_NAME}" -o jsonpath='{.spec.clusterIP}')"
   TARGET="http://${SVC_IP}/rust-echo"
+elif [[ "${MODE}" == "istio-ambient" ]]; then
+  SVC_NAME="istio-ambient-gw-rust-istio"
+  if ! kubectl -n "${APP_NS}" get svc "${SVC_NAME}" >/dev/null 2>&1; then
+    SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway.networking.k8s.io/gateway-name=istio-ambient-gw-rust -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+  fi
+  if [[ -z "${SVC_NAME}" ]]; then
+    err "Could not detect Istio Ambient gateway service. Ensure you ran: bash perf-routing/44-istio-ambient-gatewayapi-rust.sh"
+    exit 1
+  fi
+  SVC_IP="$(kubectl -n "${APP_NS}" get svc "${SVC_NAME}" -o jsonpath='{.spec.clusterIP}')"
+  TARGET="http://${SVC_IP}/rust-echo"
 elif [[ "${MODE}" == "kong" ]]; then
   # Kong Gateway Operator creates service with pattern: dataplane-ingress-<gateway-name>-*
   SVC_NAME="$(kubectl -n "${APP_NS}" get svc -l gateway-operator.konghq.com/dataplane-service-type=ingress -o jsonpath='{.items[?(@.metadata.name=~".*kong-rust.*")].metadata.name}' 2>/dev/null || true)"
@@ -89,7 +100,7 @@ elif [[ "${MODE}" == "kong" ]]; then
   SVC_IP="$(kubectl -n "${APP_NS}" get svc "${SVC_NAME}" -o jsonpath='{.spec.clusterIP}')"
   TARGET="http://${SVC_IP}/rust-echo"
 else
-  err "Unknown mode: ${MODE}. Expected nginx|envoy|istio|kong"
+  err "Unknown mode: ${MODE}. Expected nginx|envoy|istio|istio-ambient|kong"
   exit 1
 fi
 
